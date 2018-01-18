@@ -33,7 +33,7 @@ mod repository;
 mod control_routes;
 
 struct RouteHandler {
-    repo: Repository,
+	repo: Repository,
 	processor: fn(&mut Request, Repository) -> Response
 }
 
@@ -50,7 +50,7 @@ fn print_usage(program: &str, opts: Options) {
 
 fn main() {
 	let args: Vec<String> = env::args().collect();
-    let program = args[0].clone();
+	let program = args[0].clone();
 	let mut opts = Options::new();
 	opts.optopt("l", "listener", "set listener address", "127.0.0.1");
 	opts.optopt("p", "port", "set listener port", "8889");
@@ -94,47 +94,47 @@ fn main() {
 	println!("Startup: Using {} for repositories", prefix.display());
 	println!("Startup: Listening on {}", listener);
 
-    let mut repositories: Vec<Repository> = Vec::new();
+	let mut repositories: Vec<Repository> = Vec::new();
 
-    // Collect repositories
-    for object in fs::read_dir(prefix).unwrap() {
-        let obj_path = match object {
-            Err(why) => {
-                println!("[e] Error accessing {}: {}", prefix.display(), why.description());
-                continue;
-            },
-            Ok(f) => f.path()
-        };
-        let mut repository = match repository::from_path(&obj_path) {
-            Err(why) => {
-                println!("[e] Invalid repository at {}: {}", obj_path.display(), why.description());
-                continue;
-            },
-            Ok(r) => r,
-        };
-        repository.path = Some(obj_path.clone());
-        println!("Name: {:?}", repository);
-        repositories.push(repository);
-    }
+	// Collect repositories
+	for object in fs::read_dir(prefix).unwrap() {
+		let obj_path = match object {
+			Err(why) => {
+				println!("[e] Error accessing {}: {}", prefix.display(), why.description());
+				continue;
+			},
+			Ok(f) => f.path()
+		};
+		let mut repository = match repository::from_path(&obj_path) {
+			Err(why) => {
+				println!("[e] Invalid repository at {}: {}", obj_path.display(), why.description());
+				continue;
+			},
+			Ok(r) => r,
+		};
+		repository.path = Some(obj_path.clone());
+		println!("Name: {:?}", repository);
+		repositories.push(repository);
+	}
 
 	// Attach routes
 	{
 		let mut router = Router::new();
 
-        // Control
-        router.get("/about",
-            RouteHandler { repo: Repository::new(), processor: control_routes::about }, "about");
+		// Control
+		router.get("/about",
+			RouteHandler { repo: Repository::new(), processor: control_routes::about }, "about");
 
-        // Attach Repository GET Routes
-        for repo in repositories {
-            let base = repo.base.clone();
-            router.get(&base,
-                RouteHandler { repo: repo.clone(), processor: Repository::get }, repo.name.clone());
-            if repo.rw {
-                router.put(&base,
-                    RouteHandler { repo: repo.clone(), processor: Repository::put }, repo.name.clone());
-            }
-        }
+		// Attach Repository GET Routes
+		for repo in repositories {
+			let base = repo.base.clone();
+			router.get(&base,
+				RouteHandler { repo: repo.clone(), processor: Repository::get }, repo.name.clone());
+			if repo.rw {
+				router.put(&base,
+					RouteHandler { repo: repo.clone(), processor: Repository::put }, repo.name.clone());
+			}
+		}
 
 		Iron::new(router).http(listener).unwrap();
 	}
