@@ -1,0 +1,5 @@
+{
+	"name":"nightly-x86_64",
+	"base":"/nightly/x86_64",
+	"rw":false
+}
